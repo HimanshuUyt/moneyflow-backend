@@ -1,0 +1,5 @@
+*.json
+!package.json
+!package-lock.jsonserviceAccountKey.json 
+.env 
+node_modules 
