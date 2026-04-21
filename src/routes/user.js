@@ -7,18 +7,22 @@ const User = require("../models/User");
 // ================= VERIFY TOKEN =================
 const verifyToken = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split("Bearer ")[1];
+    const authHeader = req.headers.authorization;
 
-    if (!token) {
-      return res.status(401).json({ message: "No token provided" });
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ success: false, message: "No token provided" });
     }
+
+    const token = authHeader.split("Bearer ")[1];
 
     const decoded = await admin.auth().verifyIdToken(token);
 
     req.user = decoded;
     next();
+
   } catch (err) {
-    return res.status(401).json({ message: "Unauthorized" });
+    console.error("❌ Token Error:", err.message);
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   }
 };
 
@@ -35,66 +39,102 @@ router.post("/store", verifyToken, async (req, res) => {
         email,
         name: name || "",
         photo: picture || "",
-        provider: firebase.sign_in_provider,
-        status: true, // ✅ IMPORTANT
+        provider: firebase?.sign_in_provider || "firebase",
+        status: true,
       });
 
       await user.save();
     }
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      message: "User stored",
+      message: "User stored successfully",
       data: user,
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ STORE USER ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
-// ================= GET USERS (🔥 FIXED) =================
+// ================= GET USERS =================
 router.get("/", async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      data: users, // ✅ IMPORTANT
+      data: users,
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ GET USERS ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
-// ================= UPDATE USER (BLOCK/UNBLOCK) =================
+// ================= UPDATE USER (BLOCK / UNBLOCK) =================
 router.put("/:id", async (req, res) => {
   try {
+    const { status } = req.body;
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { status },
       { new: true }
     );
 
-    res.json({
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
       success: true,
       data: user,
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ UPDATE ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
 // ================= DELETE USER =================
 router.delete("/:id", async (req, res) => {
   try {
-    await User.findByIdAndDelete(req.params.id);
+    const user = await User.findByIdAndDelete(req.params.id);
 
-    res.json({
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
       success: true,
-      message: "User deleted",
+      message: "User deleted successfully",
     });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("❌ DELETE ERROR:", err);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
