@@ -9,37 +9,60 @@ const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
+    console.log("🔐 AUTH HEADER:", authHeader); // ✅ ADD THIS
+
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({ success: false, message: "No token provided" });
+      return res.status(401).json({
+        success: false,
+        message: "No token provided",
+      });
     }
 
     const token = authHeader.split("Bearer ")[1];
 
     const decoded = await admin.auth().verifyIdToken(token);
 
+    console.log("🔥 DECODED TOKEN:", decoded); // ✅ ADD THIS
+
     req.user = decoded;
     next();
 
   } catch (err) {
     console.error("❌ Token Error:", err.message);
-    return res.status(401).json({ success: false, message: "Unauthorized" });
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
   }
 };
 
 // ================= STORE USER =================
 router.post("/store", verifyToken, async (req, res) => {
   try {
-    const { uid, email, name, picture, firebase } = req.user;
+
+    /// 🔥 GET FROM TOKEN
+    const { uid } = req.user;
+
+    /// 🔥 GET FROM BODY (FRONTEND)
+    const {
+      name,
+      email,
+      photo,
+      provider
+    } = req.body;
 
     let user = await User.findOne({ uid });
 
     if (!user) {
       user = new User({
         uid,
-        email,
-        name: name || "",
-        photo: picture || "",
-        provider: firebase?.sign_in_provider || "firebase",
+        email: email || req.user.email,
+        name: name || req.user.name || "",
+        photo: photo || req.user.picture || "",
+        provider:
+          provider ||
+          req.user.firebase?.sign_in_provider ||
+          "firebase",
         status: true,
       });
 

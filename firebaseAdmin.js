@@ -7,25 +7,33 @@ const {
   FIREBASE_PRIVATE_KEY,
 } = process.env;
 
-// 🔒 Validate env variables
+// ================= VALIDATION =================
 if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-  throw new Error("Firebase environment variables are missing");
+  console.error("❌ Firebase ENV missing");
+  process.exit(1);
 }
 
-// 🔥 Fix private key format safely
-const privateKey = FIREBASE_PRIVATE_KEY.includes("\\n")
-  ? FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n")
-  : FIREBASE_PRIVATE_KEY;
+// ================= FIX PRIVATE KEY =================
+// Render / .env issue: \n comes as string
+const privateKey = FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
 
-// 🚀 Initialize Firebase (only once)
+// ================= INIT =================
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: FIREBASE_PROJECT_ID,
-      clientEmail: FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey,
-    }),
-  });
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: FIREBASE_PROJECT_ID,
+        clientEmail: FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey,
+      }),
+    });
+
+    console.log("🔥 Firebase Admin Initialized");
+
+  } catch (error) {
+    console.error("❌ Firebase Admin Init Error:", error.message);
+    process.exit(1);
+  }
 }
 
 module.exports = admin;
