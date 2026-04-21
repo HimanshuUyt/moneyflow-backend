@@ -3,11 +3,13 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-// ✅ IMPORTANT: initialize firebase
+// 🔥 FIREBASE INIT
 require("./firebaseAdmin");
 
+// ROUTES
 const categoryRoutes = require("./src/routes/category");
 const userRoutes = require("./src/routes/user");
+const emailRoutes = require("./src/routes/email"); // ✅ NEW
 
 const app = express();
 
@@ -23,8 +25,8 @@ const connectDB = async () => {
     }
 
     await mongoose.connect(process.env.MONGO_URI, {
-  dbName: "moneyflow", // 🔥 FORCE DATABASE
-});
+      dbName: "moneyflow", // ✅ correct
+    });
 
     console.log("✅ MongoDB Connected");
 
@@ -37,6 +39,7 @@ const connectDB = async () => {
 // ================= ROUTES =================
 app.use("/api/category", categoryRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/email", emailRoutes); // ✅ NEW ROUTE
 
 // ================= TEST =================
 app.get("/", (req, res) => {
