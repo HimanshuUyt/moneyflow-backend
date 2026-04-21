@@ -1,3 +1,5 @@
+// src/routes/email.js
+
 const express = require("express");
 const router = express.Router();
 
@@ -5,14 +7,9 @@ const admin = require("../../firebaseAdmin");
 const sendEmail = require("../services/emailService");
 const { verificationTemplate } = require("../utils/emailTemplates");
 
-/// ===============================
-/// 🔥 SEND VERIFICATION EMAIL
-/// ===============================
 router.post("/send-verification", async (req, res) => {
   try {
     const { email, name } = req.body;
-
-    console.log("📩 API HIT:", email);
 
     if (!email) {
       return res.status(400).json({
@@ -21,49 +18,38 @@ router.post("/send-verification", async (req, res) => {
       });
     }
 
-    /// ===============================
-    /// 🔐 GENERATE FIREBASE LINK (IMPROVED)
-    /// ===============================
+    console.log("📩 Sending verification to:", email);
+
+    // 🔥 IMPORTANT SETTINGS
     const actionCodeSettings = {
-      url: "https://moneyflow-api-bes2.onrender.com/verified", // 🔥 change to your frontend if needed
+      url: "https://moneyflow-api-bes2.onrender.com/", 
       handleCodeInApp: false,
     };
 
+    // 🔐 Generate link
     const link = await admin
       .auth()
       .generateEmailVerificationLink(email, actionCodeSettings);
 
-    console.log("🔗 VERIFY LINK:", link);
+    console.log("🔗 Link generated:", link);
 
-    /// ===============================
-    /// 🎨 TEMPLATE
-    /// ===============================
+    // 🎨 HTML
     const html = verificationTemplate(link, name || "User");
 
-    /// ===============================
-    /// 📩 SEND EMAIL
-    /// ===============================
-    console.log("📨 Sending email to:", email);
+    // 📩 Send email
+    await sendEmail(email, "Verify Your Email - MoneyFlow 🚀", html);
 
-    await sendEmail(
-      email,
-      "Verify Your Email - MoneyFlow 🚀",
-      html
-    );
-
-    console.log("✅ Email sent successfully");
-
-    return res.status(200).json({
+    return res.json({
       success: true,
       message: "Verification email sent",
     });
 
   } catch (err) {
-    console.error("❌ EMAIL ERROR FULL:", err);
+    console.error("❌ FULL ERROR:", err);
 
     return res.status(500).json({
       success: false,
-      message: err.message || "Email failed",
+      message: err.message,
     });
   }
 });
