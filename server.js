@@ -15,13 +15,15 @@ app.use(express.json());
 // ================= DB CONNECT FUNCTION =================
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URL);
+    console.log("ENV:", process.env.MONGO_URI); // debug
+
+    await mongoose.connect(process.env.MONGO_URI);
 
     console.log("✅ MongoDB Connected");
 
   } catch (err) {
     console.error("❌ MongoDB Error:", err.message);
-    process.exit(1); // stop server if DB fails
+    process.exit(1);
   }
 };
 
@@ -34,7 +36,7 @@ app.get("/", (req, res) => {
   res.send("🚀 API Running");
 });
 
-// ================= START SERVER AFTER DB =================
+// ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
