@@ -9,8 +9,6 @@ const verifyToken = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
-    console.log("🔐 AUTH HEADER:", authHeader); // ✅ ADD THIS
-
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
         success: false,
@@ -22,8 +20,6 @@ const verifyToken = async (req, res, next) => {
 
     const decoded = await admin.auth().verifyIdToken(token);
 
-    console.log("🔥 DECODED TOKEN:", decoded); // ✅ ADD THIS
-
     req.user = decoded;
     next();
 
@@ -31,7 +27,7 @@ const verifyToken = async (req, res, next) => {
     console.error("❌ Token Error:", err.message);
     return res.status(401).json({
       success: false,
-      message: "Unauthorized",
+      message: "Invalid token",
     });
   }
 };
@@ -39,31 +35,17 @@ const verifyToken = async (req, res, next) => {
 // ================= STORE USER =================
 router.post("/store", verifyToken, async (req, res) => {
   try {
+    const firebaseUser = req.user;
 
-    /// 🔥 GET FROM TOKEN
-    const { uid } = req.user;
-
-    /// 🔥 GET FROM BODY (FRONTEND)
-    const {
-      name,
-      email,
-      photo,
-      provider
-    } = req.body;
-
-    let user = await User.findOne({ uid });
+    let user = await User.findOne({ uid: firebaseUser.uid });
 
     if (!user) {
       user = new User({
-        uid,
-        email: email || req.user.email,
-        name: name || req.user.name || "",
-        photo: photo || req.user.picture || "",
-        provider:
-          provider ||
-          req.user.firebase?.sign_in_provider ||
-          "firebase",
-        status: true,
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        name: firebaseUser.name || req.body.name || "",
+        photo: firebaseUser.picture || req.body.photo || "",
+        provider: firebaseUser.firebase?.sign_in_provider || "firebase",
       });
 
       await user.save();
@@ -76,7 +58,7 @@ router.post("/store", verifyToken, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ STORE USER ERROR:", err);
+    console.error("❌ STORE ERROR:", err.message);
     return res.status(500).json({
       success: false,
       message: err.message,
@@ -95,65 +77,6 @@ router.get("/", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ GET USERS ERROR:", err);
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ================= UPDATE USER (BLOCK / UNBLOCK) =================
-router.put("/:id", async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: user,
-    });
-
-  } catch (err) {
-    console.error("❌ UPDATE ERROR:", err);
-    return res.status(500).json({
-      success: false,
-      message: err.message,
-    });
-  }
-});
-
-// ================= DELETE USER =================
-router.delete("/:id", async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: "User deleted successfully",
-    });
-
-  } catch (err) {
-    console.error("❌ DELETE ERROR:", err);
     return res.status(500).json({
       success: false,
       message: err.message,

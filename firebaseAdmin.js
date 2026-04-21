@@ -7,24 +7,17 @@ const {
   FIREBASE_PRIVATE_KEY,
 } = process.env;
 
-// ================= VALIDATION =================
-if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
-  console.error("❌ Firebase ENV missing");
-  process.exit(1);
-}
-
-// ================= FIX PRIVATE KEY =================
-// Render / .env issue: \n comes as string
-const privateKey = FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n");
-
-// ================= INIT =================
 if (!admin.apps.length) {
   try {
+    if (!FIREBASE_PROJECT_ID || !FIREBASE_CLIENT_EMAIL || !FIREBASE_PRIVATE_KEY) {
+      throw new Error("Firebase ENV missing");
+    }
+
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: FIREBASE_PROJECT_ID,
         clientEmail: FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
+        privateKey: FIREBASE_PRIVATE_KEY.replace(/\\n/g, "\n"),
       }),
     });
 

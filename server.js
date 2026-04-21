@@ -3,21 +3,28 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
+// ✅ IMPORTANT: initialize firebase
+require("./firebaseAdmin");
+
 const categoryRoutes = require("./src/routes/category");
 const userRoutes = require("./src/routes/user");
 
 const app = express();
 
 // ================= MIDDLEWARE =================
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
-// ================= DB CONNECT FUNCTION =================
+// ================= DB CONNECT =================
 const connectDB = async () => {
   try {
-    console.log("ENV:", process.env.MONGO_URI); // debug
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing in environment");
+    }
 
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI, {
+  dbName: "moneyflow", // 🔥 FORCE DATABASE
+});
 
     console.log("✅ MongoDB Connected");
 
@@ -36,7 +43,7 @@ app.get("/", (req, res) => {
   res.send("🚀 API Running");
 });
 
-// ================= START SERVER =================
+// ================= START =================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {

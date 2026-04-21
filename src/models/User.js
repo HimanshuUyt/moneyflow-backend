@@ -1,13 +1,12 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-  uid: { type: String, unique: true },
-  email: String,
-  name: String,
-  photo: String,
-  provider: String,
+  uid: { type: String, required: true, unique: true },
+  email: { type: String, required: true, unique: true },
+  name: { type: String, default: "" },
+  photo: { type: String, default: "" },
+  provider: { type: String, default: "firebase" },
   status: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("User", userSchema);
