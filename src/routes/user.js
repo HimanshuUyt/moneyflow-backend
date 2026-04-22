@@ -77,6 +77,69 @@ router.get("/", async (req, res) => {
     });
 
   } catch (err) {
+    console.error("❌ GET USERS ERROR:", err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+// ================= UPDATE USER (BLOCK / UNBLOCK) =================
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User status updated",
+      data: user,
+    });
+
+  } catch (err) {
+    console.error("❌ UPDATE ERROR:", err.message);
+    return res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+// ================= DELETE USER =================
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findByIdAndDelete(id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User deleted successfully",
+    });
+
+  } catch (err) {
+    console.error("❌ DELETE ERROR:", err.message);
     return res.status(500).json({
       success: false,
       message: err.message,
