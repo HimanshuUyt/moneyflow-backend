@@ -9,19 +9,18 @@ require("./firebaseAdmin");
 // ROUTES
 const categoryRoutes = require("./src/routes/category");
 const userRoutes = require("./src/routes/user");
-const emailRoutes = require("./src/routes/email");
 
 const app = express();
 
 // ================= SECURITY MIDDLEWARE =================
 app.use(cors({
-  origin: "*", // ⚠️ change this in production later
+  origin: "*", // ⚠️ restrict in production
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ================= HEALTH LOG MIDDLEWARE =================
+// ================= REQUEST LOG =================
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   next();
@@ -33,7 +32,7 @@ const connectDB = async () => {
     const mongoURI = process.env.MONGO_URI;
 
     if (!mongoURI) {
-      throw new Error("❌ MONGO_URI is missing in environment variables");
+      throw new Error("❌ MONGO_URI is missing");
     }
 
     await mongoose.connect(mongoURI, {
@@ -43,7 +42,7 @@ const connectDB = async () => {
     console.log("✅ MongoDB Connected");
 
   } catch (err) {
-    console.error("❌ MongoDB Connection Error:", err.message);
+    console.error("❌ MongoDB Error:", err.message);
     process.exit(1);
   }
 };
@@ -51,26 +50,25 @@ const connectDB = async () => {
 // ================= ROUTES =================
 app.use("/api/category", categoryRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/email", emailRoutes);
 
-// ================= ROOT TEST =================
+// ================= ROOT =================
 app.get("/", (req, res) => {
-  res.status(200).json({
+  res.json({
     success: true,
-    message: "🚀 MoneyFlow API is running perfectly",
+    message: "🚀 MoneyFlow API running",
   });
 });
 
-// ================= GLOBAL ERROR HANDLER =================
+// ================= ERROR HANDLER =================
 app.use((err, req, res, next) => {
   console.error("❌ Global Error:", err);
   res.status(500).json({
     success: false,
-    message: "Internal Server Error",
+    message: err.message || "Internal Server Error",
   });
 });
 
-// ================= START SERVER =================
+// ================= START =================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
