@@ -22,7 +22,6 @@ const verifyToken = async (req, res, next) => {
 
     req.user = decoded;
     next();
-
   } catch (err) {
     console.error("❌ Token Error:", err.message);
     return res.status(401).json({
@@ -85,17 +84,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-// ================= UPDATE USER (BLOCK / UNBLOCK) =================
+// ================= BLOCK / UNBLOCK USER =================
 router.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
+    const user = await User.findById(id);
 
     if (!user) {
       return res.status(404).json({
@@ -104,9 +99,18 @@ router.put("/:id", async (req, res) => {
       });
     }
 
+    // 🔥 UPDATE FIREBASE (VERY IMPORTANT)
+    await admin.auth().updateUser(user.uid, {
+      disabled: !status, // true = blocked
+    });
+
+    // 🔥 UPDATE MONGODB
+    user.status = status;
+    await user.save();
+
     return res.status(200).json({
       success: true,
-      message: "User status updated",
+      message: status ? "User activated" : "User blocked",
       data: user,
     });
 
@@ -124,7 +128,7 @@ router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
 
-    const user = await User.findByIdAndDelete(id);
+    const user = await User.findById(id);
 
     if (!user) {
       return res.status(404).json({
@@ -132,6 +136,12 @@ router.delete("/:id", async (req, res) => {
         message: "User not found",
       });
     }
+
+    // 🔥 DELETE FROM FIREBASE FIRST
+    await admin.auth().deleteUser(user.uid);
+
+    // 🔥 DELETE FROM MONGODB
+    await User.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,
