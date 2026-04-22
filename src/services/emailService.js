@@ -1,30 +1,20 @@
-// src/services/emailService.js
+const { Resend } = require("resend");
 
-const nodemailer = require("nodemailer");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 🔥 CREATE TRANSPORTER
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,       // your gmail
-    pass: process.env.EMAIL_PASS,       // app password
-  },
-});
-
-// ✅ SEND EMAIL FUNCTION
 const sendEmail = async (to, subject, html) => {
   try {
-    const info = await transporter.sendMail({
-      from: `"MoneyFlow" <${process.env.EMAIL_USER}>`,
+    const result = await resend.emails.send({
+      from: "MoneyFlow <onboarding@resend.dev>",
       to,
       subject,
       html,
     });
 
-    console.log("✅ Email sent:", info.messageId);
-  } catch (error) {
-    console.error("❌ Email error:", error.message);
-    throw error;
+    console.log("✅ Email sent:", result);
+  } catch (err) {
+    console.error("❌ Email failed:", err);
+    throw err;
   }
 };
 

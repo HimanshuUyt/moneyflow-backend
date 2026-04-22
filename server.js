@@ -9,29 +9,41 @@ require("./firebaseAdmin");
 // ROUTES
 const categoryRoutes = require("./src/routes/category");
 const userRoutes = require("./src/routes/user");
-const emailRoutes = require("./src/routes/email"); // ✅ NEW
+const emailRoutes = require("./src/routes/email");
 
 const app = express();
 
-// ================= MIDDLEWARE =================
-app.use(cors({ origin: "*" }));
+// ================= SECURITY MIDDLEWARE =================
+app.use(cors({
+  origin: "*", // ⚠️ change this in production later
+}));
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ================= HEALTH LOG MIDDLEWARE =================
+app.use((req, res, next) => {
+  console.log(`📡 ${req.method} ${req.url}`);
+  next();
+});
 
 // ================= DB CONNECT =================
 const connectDB = async () => {
   try {
-    if (!process.env.MONGO_URI) {
-      throw new Error("MONGO_URI is missing in environment");
+    const mongoURI = process.env.MONGO_URI;
+
+    if (!mongoURI) {
+      throw new Error("❌ MONGO_URI is missing in environment variables");
     }
 
-    await mongoose.connect(process.env.MONGO_URI, {
-      dbName: "moneyflow", // ✅ correct
+    await mongoose.connect(mongoURI, {
+      dbName: "moneyflow",
     });
 
     console.log("✅ MongoDB Connected");
 
   } catch (err) {
-    console.error("❌ MongoDB Error:", err.message);
+    console.error("❌ MongoDB Connection Error:", err.message);
     process.exit(1);
   }
 };
@@ -39,14 +51,26 @@ const connectDB = async () => {
 // ================= ROUTES =================
 app.use("/api/category", categoryRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/email", emailRoutes); // ✅ NEW ROUTE
+app.use("/api/email", emailRoutes);
 
-// ================= TEST =================
+// ================= ROOT TEST =================
 app.get("/", (req, res) => {
-  res.send("🚀 API Running");
+  res.status(200).json({
+    success: true,
+    message: "🚀 MoneyFlow API is running perfectly",
+  });
 });
 
-// ================= START =================
+// ================= GLOBAL ERROR HANDLER =================
+app.use((err, req, res, next) => {
+  console.error("❌ Global Error:", err);
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+  });
+});
+
+// ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
