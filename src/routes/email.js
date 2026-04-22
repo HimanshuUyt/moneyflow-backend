@@ -1,5 +1,3 @@
-// src/routes/email.js
-
 const express = require("express");
 const router = express.Router();
 
@@ -7,6 +5,8 @@ const admin = require("../../firebaseAdmin");
 const sendEmail = require("../services/emailService");
 const { verificationTemplate } = require("../utils/emailTemplates");
 
+
+// ================= SEND VERIFICATION =================
 router.post("/send-verification", async (req, res) => {
   try {
     const { email, name } = req.body;
@@ -18,25 +18,17 @@ router.post("/send-verification", async (req, res) => {
       });
     }
 
-    console.log("📩 Sending verification to:", email);
-
-    // 🔥 IMPORTANT SETTINGS
     const actionCodeSettings = {
-      url: "https://moneyflow-api-bes2.onrender.com/", 
+      url: "https://moneyflow-api-bes2.onrender.com/api/email/verify-email", // 🔥 IMPORTANT
       handleCodeInApp: false,
     };
 
-    // 🔐 Generate link
     const link = await admin
       .auth()
       .generateEmailVerificationLink(email, actionCodeSettings);
 
-    console.log("🔗 Link generated:", link);
-
-    // 🎨 HTML
     const html = verificationTemplate(link, name || "User");
 
-    // 📩 Send email
     await sendEmail(email, "Verify Your Email - MoneyFlow 🚀", html);
 
     return res.json({
@@ -45,12 +37,35 @@ router.post("/send-verification", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ FULL ERROR:", err);
+    console.error(err);
 
     return res.status(500).json({
       success: false,
       message: err.message,
     });
+  }
+});
+
+
+// ================= VERIFY EMAIL (ADD THIS HERE) =================
+router.get("/verify-email", async (req, res) => {
+  try {
+    const { oobCode } = req.query;
+
+    if (!oobCode) {
+      return res.send("❌ Invalid verification link");
+    }
+
+    await admin.auth().applyActionCode(oobCode);
+
+    return res.send(`
+      <h2>✅ Email Verified Successfully</h2>
+      <p>You can now login in the app.</p>
+    `);
+
+  } catch (err) {
+    console.error(err);
+    return res.send("❌ Verification failed or link expired");
   }
 });
 
