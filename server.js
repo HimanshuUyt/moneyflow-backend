@@ -1,6 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const path = require("path");
+const fs = require("fs");
 require("dotenv").config();
 
 // 🔥 FIREBASE INIT
@@ -9,28 +11,41 @@ require("./firebaseAdmin");
 // ROUTES
 const categoryRoutes = require("./src/routes/category");
 const userRoutes = require("./src/routes/user");
-const expenseRoutes = require("./src/routes/expense");   // ✅ NEW
-const incomeRoutes = require("./src/routes/income");     // ✅ NEW
+const expenseRoutes = require("./src/routes/expense");
+const incomeRoutes = require("./src/routes/income");
 
 const app = express();
 
-// ================= SECURITY =================
+/// ================= CREATE UPLOAD FOLDER =================
+const uploadPath = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath);
+  console.log("📁 uploads folder created");
+}
+
+/// ================= SECURITY (CORS) =================
 app.use(cors({
-  origin: "*", // ⚠️ change in production
+  origin: "*", // ⚠️ restrict in production
   methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// ================= BODY PARSER =================
-app.use(express.json());
+/// ================= BODY PARSER =================
+app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
-// ================= LOGGER =================
+/// ================= STATIC FILES =================
+/// 🔥 VERY IMPORTANT (serve uploaded images)
+app.use("/uploads", express.static(uploadPath));
+
+/// ================= LOGGER =================
 app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   next();
 });
 
-// ================= DATABASE =================
+/// ================= DATABASE =================
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGO_URI;
@@ -51,13 +66,13 @@ const connectDB = async () => {
   }
 };
 
-// ================= ROUTES =================
+/// ================= ROUTES =================
 app.use("/api/category", categoryRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/expenses", expenseRoutes);   // ✅ NEW
-app.use("/api/income", incomeRoutes);      // ✅ NEW
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/income", incomeRoutes);
 
-// ================= HEALTH CHECK =================
+/// ================= HEALTH CHECK =================
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -65,7 +80,7 @@ app.get("/", (req, res) => {
   });
 });
 
-// ================= 404 HANDLER =================
+/// ================= 404 HANDLER =================
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -73,7 +88,7 @@ app.use((req, res) => {
   });
 });
 
-// ================= GLOBAL ERROR =================
+/// ================= GLOBAL ERROR =================
 app.use((err, req, res, next) => {
   console.error("❌ Global Error:", err);
 
@@ -83,11 +98,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// ================= START SERVER =================
+/// ================= START SERVER =================
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+  app.listen(PORT, "[IP_ADDRESS]", () => {
+    console.log(`🚀 Server running on http://[IP_ADDRESS]:${PORT}`);
   });
 });

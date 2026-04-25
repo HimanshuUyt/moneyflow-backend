@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
   uid: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   name: { type: String, default: "" },
+  phone: { type: String, default: "" }, // ✅ ADD THIS
   photo: { type: String, default: "" },
   provider: { type: String, default: "firebase" },
   status: { type: Boolean, default: true },
