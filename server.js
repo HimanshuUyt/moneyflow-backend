@@ -102,7 +102,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  app.listen(PORT, "[IP_ADDRESS]", () => {
-    console.log(`🚀 Server running on http://[IP_ADDRESS]:${PORT}`);
+  app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
   });
 });
