@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Expense = require("../models/Expense");
 
+
 // ================= ADD EXPENSE =================
 router.post("/", async (req, res) => {
   try {
@@ -14,13 +15,11 @@ router.post("/", async (req, res) => {
       });
     }
 
-    const expense = new Expense({
+    const expense = await Expense.create({
       title,
       amount,
       userId,
     });
-
-    await expense.save();
 
     res.status(201).json({
       success: true,
@@ -29,7 +28,30 @@ router.post("/", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ ADD EXPENSE:", err.message);
+    console.error("ADD EXPENSE:", err.message);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+
+// ================= GET ALL EXPENSES (ADMIN) =================
+router.get("/", async (req, res) => {
+  try {
+    const expenses = await Expense.find()
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: expenses,
+    });
+
+  } catch (err) {
+    console.error("GET ALL EXPENSES:", err.message);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -39,20 +61,20 @@ router.post("/", async (req, res) => {
 
 
 // ================= GET USER EXPENSES =================
-router.get("/:userId", async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
-    const { userId } = req.params;
+    const expenses = await Expense.find({
+      userId: req.params.userId
+    }).sort({ createdAt: -1 });
 
-    const expenses = await Expense.find({ userId })
-      .sort({ createdAt: -1 });
-
-    res.json({
+    res.status(200).json({
       success: true,
       data: expenses,
     });
 
   } catch (err) {
-    console.error("❌ GET EXPENSE:", err.message);
+    console.error("GET USER EXPENSES:", err.message);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -66,13 +88,18 @@ router.delete("/:id", async (req, res) => {
   try {
     await Expense.findByIdAndDelete(req.params.id);
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Expense deleted",
     });
 
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("DELETE EXPENSE:", err.message);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
