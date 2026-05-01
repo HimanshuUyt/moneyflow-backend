@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Income = require("../models/Income");
 
+
 // ================= ADD INCOME =================
 router.post("/", async (req, res) => {
   try {
@@ -29,7 +30,30 @@ router.post("/", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ ADD INCOME:", err.message);
+    console.error("ADD INCOME:", err.message);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+
+// ================= GET ALL INCOME (ADMIN) =================
+router.get("/", async (req, res) => {
+  try {
+    const incomes = await Income.find()
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: incomes,
+    });
+
+  } catch (err) {
+    console.error("GET ALL INCOME:", err.message);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -39,20 +63,21 @@ router.post("/", async (req, res) => {
 
 
 // ================= GET USER INCOME =================
-router.get("/:userId", async (req, res) => {
+router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
 
     const incomes = await Income.find({ userId })
       .sort({ createdAt: -1 });
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: incomes,
     });
 
   } catch (err) {
-    console.error("❌ GET INCOME:", err.message);
+    console.error("GET USER INCOME:", err.message);
+
     res.status(500).json({
       success: false,
       message: err.message,
@@ -66,13 +91,18 @@ router.delete("/:id", async (req, res) => {
   try {
     await Income.findByIdAndDelete(req.params.id);
 
-    res.json({
+    res.status(200).json({
       success: true,
       message: "Income deleted",
     });
 
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    console.error("DELETE INCOME:", err.message);
+
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 });
 
